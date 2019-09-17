@@ -3,6 +3,7 @@ package com.ibot.cyranosystems.camerasampleapp
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
+import android.content.pm.PackageManager.FEATURE_CAMERA_FLASH
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.content.res.Configuration
 import android.graphics.Matrix
@@ -22,6 +23,7 @@ import android.util.Size
 import android.util.SparseIntArray
 import android.view.*
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
 import androidx.core.app.ActivityCompat
@@ -29,6 +31,7 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.example.android.camera2video.*
+import kotlinx.android.synthetic.main.fragment_camera2_video.*
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.Semaphore
@@ -55,6 +58,7 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
         append(Surface.ROTATION_180, 90)
         append(Surface.ROTATION_270, 0)
     }
+    private var isFlashEnable = false
 
     /**
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a
@@ -136,6 +140,17 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
      * Orientation of the camera sensor
      */
     private var sensorOrientation = 0
+    private var manager: CameraManager? = null
+
+    private var isEnableFlash = false
+    private lateinit var flash: ImageView
+    private lateinit var switchCamera: ImageView
+    /** 0 forback camera
+     * 1 for front camera
+     * Initlity default camera is front camera */
+    private val CAMERA_FRONT = "1"
+    private val CAMERA_BACK = "0"
+    private var cameraId: String = "0"
 
     /**
      * [CameraDevice.StateCallback] is called when [CameraDevice] changes its status.
@@ -146,8 +161,8 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
             cameraOpenCloseLock.release()
             this@Camera2VideoFragment.cameraDevice = cameraDevice
             startPreview()
-            Log.i("TextureView Width:--",textureView.width.toString())
-            Log.i("TextureView Height:--",textureView.height.toString())
+            Log.i("TextureView Width:--", textureView.width.toString())
+            Log.i("TextureView Height:--", textureView.height.toString())
             configureTransform(textureView.width, textureView.height)
         }
 
@@ -184,7 +199,10 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
         videoButton = view.findViewById<Button>(R.id.video).also {
             it.setOnClickListener(this)
         }
-        view.findViewById<View>(R.id.info).setOnClickListener(this)
+        switchCamera = view.findViewById(R.id.switch_camera)
+        flash = view.findViewById(R.id.flash)
+        flash.setOnClickListener(this)
+        switchCamera.setOnClickListener(this)
     }
 
     override fun onResume() {
@@ -219,6 +237,8 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
                         .show()
                 }
             }
+            R.id.flash -> handleFlash()
+            R.id.switch_camera -> switchCamera()
         }
     }
 
@@ -293,6 +313,10 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
             checkSelfPermission((activity as FragmentActivity), it) != PERMISSION_GRANTED
         }
 
+    private fun setUpCaptureRequestFalshBuilder(builder: CaptureRequest.Builder?) {
+        builder?.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_TORCH)
+    }
+
     /**
      * Tries to open a [CameraDevice]. The result is listened by [stateCallback].
      *
@@ -308,15 +332,20 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
         val cameraActivity = activity
         if (cameraActivity == null || cameraActivity.isFinishing) return
 
-        val manager = cameraActivity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        manager = cameraActivity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw RuntimeException("Time out waiting to lock camera opening.")
             }
-            val cameraId = manager.cameraIdList[0]
-
+//           //previewRequestBuilder.set(CameraMetadata.FLASH_MODE_TORCH, CameraMetadata.FLASH_MODE_OFF)
+//            previewRequestBuilder= cameraDevice?.createCaptureRequest(TEMPLATE_PREVIEW) ?:
+//
+////            CaptureRequest request = builder.build();
+////            cameraCaptureSession.capture(request, null, null);
+            // cameraId = manager!!.cameraIdList[0]
+            //  manager!!.setTorchMode(cameraId,false)
             // Choose the sizes for camera preview and video recording
-            val characteristics = manager.getCameraCharacteristics(cameraId)
+            val characteristics = manager!!.getCameraCharacteristics(cameraId)
             val map = characteristics.get(SCALER_STREAM_CONFIGURATION_MAP)
                 ?: throw RuntimeException("Cannot get available preview/video sizes")
             sensorOrientation = characteristics.get(SENSOR_ORIENTATION)
@@ -325,7 +354,7 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
                 map.getOutputSizes(SurfaceTexture::class.java),
                 width, height, videoSize
             )
-
+            Log.i("Camera ID", manager!!.cameraIdList[0])
             if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                 textureView.setAspectRatio(previewSize.width, previewSize.height)
             } else {
@@ -333,7 +362,7 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
             }
             configureTransform(width, height)
             mediaRecorder = MediaRecorder()
-            manager.openCamera(cameraId, stateCallback, null)
+            manager!!.openCamera(cameraId, stateCallback, null)
         } catch (e: CameraAccessException) {
             showToast("Cannot access the camera.")
             cameraActivity.finish()
@@ -574,20 +603,20 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
      * @param choices The list of available sizes
      * @return The video size
      */
-    private fun chooseVideoSize(choices: Array<Size>) :Size{
+    private fun chooseVideoSize(choices: Array<Size>): Size {
         for (size in choices) {
             if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                 if ((size.width / 16) == (size.height / 9) && size.height <= 4480) {
                     //AppLog.e(TAG1, "chooseVideoSize:" + size);
-                    Log.i("Landscape chooseVideoSize Width:--",size.width.toString())
-                    Log.i("Landscape chooseVideoSize Height:--",size.height.toString())
-                    Log.i("Landscape chooseVideoSize Height/9:--",(size.height /9).toString())
-                    Log.i("Landscape chooseVideoSize Width/16:--",(size.width /16).toString())
+                    Log.i("Landscape chooseVideoSize Width:--", size.width.toString())
+                    Log.i("Landscape chooseVideoSize Height:--", size.height.toString())
+                    Log.i("Landscape chooseVideoSize Height/9:--", (size.height / 9).toString())
+                    Log.i("Landscape chooseVideoSize Width/16:--", (size.width / 16).toString())
                     return size
                 }
-            }else {
-                Log.i("Portrait chooseVideoSize Width:--",size.width.toString())
-                Log.i("Portrait chooseVideoSize Height:--",size.height.toString())
+            } else {
+                Log.i("Portrait chooseVideoSize Width:--", size.width.toString())
+                Log.i("Portrait chooseVideoSize Height:--", size.height.toString())
                 if ((size.width / 16) == (size.height / 9) && (size.height <= 3840)) {
                     //if((size.getWidth()/16) == (size.getHeight()/9) && size.getWidth() <=4480 ) {
                     //AppLog.e(TAG1, "chooseVideoSize:" + size);
@@ -647,8 +676,8 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
         val bigEnough = choices.filter {
             it.height == it.width * h / w && it.width >= width && it.height >= height
         }
-        Log.i("chooseOptimalSize width:--",aspectRatio.width.toString())
-        Log.i("chooseOptimalSize Height:--",aspectRatio.height.toString())
+        Log.i("chooseOptimalSize width:--", aspectRatio.width.toString())
+        Log.i("chooseOptimalSize Height:--", aspectRatio.height.toString())
 //        Log.i("Landscape chooseVideoSize Height/9:--",(size.height /9).toString())
 //        Log.i("Landscape chooseVideoSize Width/16:--",(size.width /16).toString())
 //        var loopCounter = 0
@@ -689,11 +718,92 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
 //            return choices[0];
 //        }
         return if (bigEnough.isNotEmpty()) {
-            Log.i("chooseOptimalSize bigEnough:--",bigEnough.toString())
+            Log.i("chooseOptimalSize bigEnough:--", bigEnough.toString())
             Collections.min(bigEnough, CompareSizesByArea())
         } else {
             choices[0]
         }
+    }
+
+    private fun switchCamera() {
+        if (cameraId.equals(CAMERA_FRONT)) {
+            cameraId = CAMERA_BACK
+            switch_camera.setImageResource(R.drawable.ic_camera_front_white_24dp)
+            closeCamera()
+            if (textureView.isAvailable) {
+                openCamera(textureView.width, textureView.height)
+            } else {
+                textureView.surfaceTextureListener = surfaceTextureListener
+            }
+        } else if (cameraId.equals(CAMERA_BACK)) {
+            cameraId = CAMERA_FRONT
+            switch_camera.setImageResource(R.drawable.ic_switch_camera_white_24dp)
+            closeCamera()
+            if (textureView.isAvailable) {
+                openCamera(textureView.width, textureView.height)
+            } else {
+                textureView.surfaceTextureListener = surfaceTextureListener
+            }
+        }
+
+    }
+
+    private fun handleFlash() {
+        if (!isFlashAvailable()) {
+            AlertDialog.Builder(activity).setTitle("Error!")
+                .setMessage("Your device doesn't support flash light!")
+                .setPositiveButton(android.R.string.ok, { dialog, which -> dialog.dismiss() })
+                .show()
+        } else {
+            setFlash(isFlashEnable)
+        }
+    }
+
+    fun setFlash(isFlash: Boolean) {
+        if (textureView.context.packageManager.hasSystemFeature(FEATURE_CAMERA_FLASH)) {
+            when (cameraId) {
+                CAMERA_FRONT -> {
+                    Log.e("Camera2", "Front Camera Flash isn't supported yet.")
+                    AlertDialog.Builder(activity).setTitle("Camera")
+                        .setMessage("Front Camera Flash isn't supported yet.")
+                        .setPositiveButton(
+                            android.R.string.ok,
+                            { dialog, which -> dialog.dismiss() })
+                        .show()
+                }
+                CAMERA_BACK -> enableFlash(isFlash)
+            }
+        } else {
+            // manager!!.setTorchMode(cameraId,true)
+        }
+    }
+
+    private fun enableFlash(isFlash: Boolean) {
+        if (!isFlash) {
+            isFlashEnable = true
+            previewRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH)
+            previewRequestBuilder.set(
+                CaptureRequest.CONTROL_AE_MODE,
+                CaptureRequest.CONTROL_AE_MODE_ON
+            )
+            flash.setImageResource(R.drawable.ic_flash_on_white_24dp)
+        } else {
+            isFlashEnable = false
+            previewRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+            previewRequestBuilder.set(
+                CaptureRequest.CONTROL_AE_MODE,
+                CaptureRequest.CONTROL_AE_MODE_OFF
+            )
+            flash.setImageResource(R.drawable.ic_flash_off_white_24dp)
+        }
+        captureSession?.setRepeatingRequest(previewRequestBuilder.build(), null, null)
+    }
+
+    private fun isFlashAvailable(): Boolean {
+        var isFlashAvailable = requireContext().getPackageManager().hasSystemFeature(
+            FEATURE_CAMERA_FLASH
+        )
+        return isFlashAvailable
     }
 
     companion object {
