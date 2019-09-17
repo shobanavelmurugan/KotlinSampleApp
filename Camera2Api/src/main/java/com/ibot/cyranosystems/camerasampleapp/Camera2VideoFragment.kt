@@ -16,13 +16,14 @@ import android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW
 import android.hardware.camera2.CameraDevice.TEMPLATE_RECORD
 import android.media.MediaRecorder
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import android.util.Size
 import android.util.SparseIntArray
 import android.view.*
-import android.widget.Button
+import android.view.animation.AccelerateInterpolator
 import android.widget.ImageView
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
@@ -31,6 +32,7 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.example.android.camera2video.*
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.fragment_camera2_video.*
 import java.io.IOException
 import java.util.*
@@ -88,7 +90,7 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
     /**
      * Button to record video
      */
-    private lateinit var videoButton: Button
+    private lateinit var videoButton: ImageView
 
     /**
      * A reference to the opened [android.hardware.camera2.CameraDevice].
@@ -142,9 +144,9 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
     private var sensorOrientation = 0
     private var manager: CameraManager? = null
 
-    private var isEnableFlash = false
     private lateinit var flash: ImageView
     private lateinit var switchCamera: ImageView
+    private lateinit var timerRecording: ImageView
     /** 0 forback camera
      * 1 for front camera
      * Initlity default camera is front camera */
@@ -196,13 +198,18 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         textureView = view.findViewById(R.id.texture)
-        videoButton = view.findViewById<Button>(R.id.video).also {
-            it.setOnClickListener(this)
-        }
+//        videoButton = view.findViewById<Button>(R.id.imgRecordingVideo).also {
+//            it.setOnClickListener(this)
+//        }
+        txtViewCounter.setOnClickListener(this)
+        videoButton = view.findViewById(R.id.imgRecordingVideo)
+        timerRecording = view.findViewById(R.id.timer)
+        imgRecordingVideo.setOnClickListener(this)
         switchCamera = view.findViewById(R.id.switch_camera)
         flash = view.findViewById(R.id.flash)
         flash.setOnClickListener(this)
         switchCamera.setOnClickListener(this)
+        timer.setOnClickListener(this)
     }
 
     override fun onResume() {
@@ -228,7 +235,7 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
 
     override fun onClick(view: View) {
         when (view.id) {
-            R.id.video -> if (isRecordingVideo) stopRecordingVideo() else startRecordingVideo()
+            R.id.imgRecordingVideo -> if (isRecordingVideo) stopRecordingVideo() else startRecordingVideo()
             R.id.info -> {
                 if (activity != null) {
                     AlertDialog.Builder(activity)
@@ -239,6 +246,10 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
             }
             R.id.flash -> handleFlash()
             R.id.switch_camera -> switchCamera()
+            R.id.timer -> {
+                val timer = MyCounter(3000, 1000)
+                timer.start()
+            }
         }
     }
 
@@ -312,10 +323,6 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
         permissions.none {
             checkSelfPermission((activity as FragmentActivity), it) != PERMISSION_GRANTED
         }
-
-    private fun setUpCaptureRequestFalshBuilder(builder: CaptureRequest.Builder?) {
-        builder?.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_TORCH)
-    }
 
     /**
      * Tries to open a [CameraDevice]. The result is listened by [stateCallback].
@@ -557,9 +564,10 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
                         captureSession = cameraCaptureSession
                         updatePreview()
                         activity?.runOnUiThread {
-                            videoButton.setText(R.string.stop)
+                            videoButton.setImageResource(R.drawable.ic_stop_recording)
                             isRecordingVideo = true
                             mediaRecorder?.start()
+                            Snackbar.make(textureView,"Recording Start", Snackbar.LENGTH_LONG).show()
                         }
                     }
 
@@ -583,8 +591,9 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
 
     private fun stopRecordingVideo() {
         isRecordingVideo = false
-        videoButton.setText(R.string.record)
+        videoButton.setImageResource(R.drawable.ic_start_recording)
         mediaRecorder?.apply {
+            Snackbar.make(textureView,"Strop Recording", Snackbar.LENGTH_LONG).show()
             stop()
             reset()
         }
@@ -809,5 +818,42 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
     companion object {
         fun newInstance(): Camera2VideoFragment = Camera2VideoFragment()
     }
+//private fun setCountDownAnimation(txtViewCounter:TextView){
+//    val fadeOut = AlphaAnimation(1f, 0f)
+//    fadeOut.interpolator = AccelerateInterpolator()
+//    fadeOut.duration = 1000
+//
+//    val animation = AnimationSet(false)
+//    animation.addAnimation(fadeOut)
+//    view?.startAnimation(animation)
+//}
+    inner class MyCounter(millisInFuture: Long, countDownInterval: Long) :
+        CountDownTimer(millisInFuture, countDownInterval) {
 
+        override fun onFinish() {
+            cancel()
+            startRecordingVideo()
+            txtViewCounter.setText("")
+        }
+
+        override fun onTick(millisUntilFinished: Long) {
+            txtViewCounter.textSize = 150f
+            txtViewCounter.animate().alpha(1.0f).setDuration(1000).setInterpolator(AccelerateInterpolator()).start()
+
+//            val alphaAnimation: Animation=ScaleAnimation(activity,1.0f,0.0f,1.0f)
+//            alphaAnimation : Animation = ScaleAnimation()
+//            // Use a set of animations
+//            Animation scaleAnimation = new ScaleAnimation(1.0f, 0.0f, 1.0f,
+//                0.0f, Animation.RELATIVE_TO_SELF, 0.5f,
+//                Animation.RELATIVE_TO_SELF, 0.5f);
+//            Animation alphaAnimation = new AlphaAnimation(1.0f, 0.0f);
+//            AnimationSet animationSet = new AnimationSet(false);
+//            animationSet.addAnimation(scaleAnimation);
+//            animationSet.addAnimation(alphaAnimation);
+//            countDownAnimation.setAnimation(animationSet);
+
+            txtViewCounter.text = (millisUntilFinished / 1000).toString() + ""
+            println("Timer  : " + millisUntilFinished / 1000)
+        }
+    }
 }

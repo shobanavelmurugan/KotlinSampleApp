@@ -13,102 +13,111 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <FrameLayout
-        android:layout_width="match_parent"
+    <ImageView
+        android:id="@+id/timer"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:layout_gravity="center_vertical|start"
+        android:layout_margin="5dp"
+        android:contentDescription="@string/description_info"
+        android:src="@drawable/ic_timer_white_24dp"
+        android:visibility="visible"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <Button
-                android:id="@+id/video"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:layout_marginBottom="25dp"
-                android:text="@string/record" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/video"
-                android:orientation="horizontal"
-                android:layout_marginBottom="5dp"
-                android:weightSum="2">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="0.50"
-                    android:gravity="center"
-                    android:text="Video"
-                    android:textColor="@android:color/white" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="0.50"
-                    android:gravity="center"
-                    android:text="Audio"
-                    android:textColor="@android:color/white" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="0.50"
-                    android:gravity="center"
-                    android:text="Library"
-                    android:textColor="@android:color/white" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="0.50"
-                    android:gravity="center"
-                    android:text="Link"
-                    android:textColor="@android:color/white" />
-            </LinearLayout>
-        </RelativeLayout>
-    </FrameLayout>
-
-    <FrameLayout
-        android:layout_width="match_parent"
+    <ImageView
+        android:id="@+id/flash"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|center"
+        android:layout_margin="5dp"
+        android:contentDescription="@string/description_info"
+        android:src="@drawable/ic_flash_off_white_24dp"
+        android:visibility="visible"
+        app:layout_constraintEnd_toStartOf="@+id/switch_camera"
+        app:layout_constraintStart_toStartOf="@+id/timer"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/switch_camera"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|end"
+        android:layout_margin="5dp"
+        android:contentDescription="@string/description_info"
+        android:src="@drawable/ic_camera_front_white_24dp"
+        android:visibility="visible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/txtViewVideo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:text="Video"
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/txtViewAudio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:text="Audio"
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/txtViewMedia"
+        app:layout_constraintStart_toEndOf="@+id/txtViewVideo" />
+
+    <TextView
+        android:id="@+id/txtViewMedia"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:text="Media"
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/txtViewLink"
+        app:layout_constraintStart_toEndOf="@+id/txtViewAudio" />
+
+    <TextView
+        android:id="@+id/txtViewLink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:text="Link"
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/txtViewCounter"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:textColor="#ff4000"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <ImageView
-            android:id="@+id/timer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical|start"
-            android:layout_margin="5dp"
-            android:contentDescription="@string/description_info"
-            android:src="@drawable/ic_timer_white_24dp"
-            android:visibility="visible" />
+    <ImageView
+        android:id="@+id/imgRecordingVideo"
+        android:layout_width="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/txtViewVideo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:src="@drawable/ic_start_recording"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/app_name" />
 
-        <ImageView
-            android:id="@+id/flash"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical|center"
-            android:layout_margin="5dp"
-            android:contentDescription="@string/description_info"
-            android:src="@drawable/ic_flash_off_white_24dp"
-            android:visibility="visible" />
-
-        <ImageView
-            android:id="@+id/switch_camera"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical|end"
-            android:layout_margin="5dp"
-            android:contentDescription="@string/description_info"
-            android:src="@drawable/ic_camera_front_white_24dp"
-            android:visibility="visible" />
-    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
