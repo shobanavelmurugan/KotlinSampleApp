@@ -25,8 +25,10 @@ import android.util.SparseIntArray
 import android.view.*
 import android.view.animation.*
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.fragment.app.Fragment
@@ -61,6 +63,9 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
         append(Surface.ROTATION_270, 0)
     }
     private var isFlashEnable = false
+    private var isTimerOff = true
+    private var isTimer5Second = false
+    private var isTimer10Second = false
 
     /**
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a
@@ -81,6 +86,10 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
         override fun onSurfaceTextureUpdated(surfaceTexture: SurfaceTexture) = Unit
 
     }
+    private lateinit var viewTimer: ConstraintLayout
+    private lateinit var txtOff: TextView
+    private lateinit var txt3second: TextView
+    private lateinit var txt10second: TextView
 
     /**
      * An [AutoFitTextureView] for camera preview.
@@ -143,7 +152,7 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
      */
     private var sensorOrientation = 0
     private var manager: CameraManager? = null
-
+    var count: Int = 0
     private lateinit var flash: ImageView
     private lateinit var switchCamera: ImageView
     private lateinit var timerRecording: ImageView
@@ -198,18 +207,26 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         textureView = view.findViewById(R.id.texture)
-//        videoButton = view.findViewById<Button>(R.id.imgRecordingVideo).also {
-//            it.setOnClickListener(this)
-//        }
-        txtViewCounter.setOnClickListener(this)
+        viewTimer = view.findViewById(R.id.viewTimer)
         videoButton = view.findViewById(R.id.imgRecordingVideo)
         timerRecording = view.findViewById(R.id.timer)
-        imgRecordingVideo.setOnClickListener(this)
         switchCamera = view.findViewById(R.id.switch_camera)
         flash = view.findViewById(R.id.flash)
+        txtOff = view.findViewById(R.id.txtOff)
+        txt3second = view.findViewById(R.id.txt3second)
+        txt10second = view.findViewById(R.id.txt10second)
+
         flash.setOnClickListener(this)
         switchCamera.setOnClickListener(this)
         timer.setOnClickListener(this)
+        imgRecordingVideo.setOnClickListener(this)
+        txtViewCounter.setOnClickListener(this)
+        txtOff.setOnClickListener(this)
+        txt3second.setOnClickListener(this)
+        txt10second.setOnClickListener(this)
+        //       videoButton = view.findViewById<Button>(R.id.imgRecordingVideo).also {
+        //            it.setOnClickListener(this)
+//        }
     }
 
     override fun onResume() {
@@ -235,7 +252,24 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
 
     override fun onClick(view: View) {
         when (view.id) {
-            R.id.imgRecordingVideo -> if (isRecordingVideo) stopRecordingVideo() else startRecordingVideo()
+            R.id.imgRecordingVideo -> {
+                if (isRecordingVideo)
+                    stopRecordingVideo()
+                else {
+                    if (isTimerOff) startRecordingVideo()
+                    if (isTimer5Second) {
+                        count=5
+                        val timer = MyCounter(6000, 1000)
+                        timer.start()
+                    }
+                    if (isTimer10Second) {
+                        count=10
+                        val timer = MyCounter(11000, 1000)
+                        timer.start()
+                    }
+                }
+                //startRecordingVideo()
+            }
             R.id.info -> {
                 if (activity != null) {
                     AlertDialog.Builder(activity)
@@ -246,15 +280,35 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
             }
             R.id.flash -> handleFlash()
             R.id.switch_camera -> switchCamera()
+            R.id.txtOff -> {
+                viewTimer.visibility = View.GONE
+                isTimerOff = true
+                isTimer5Second = false
+                isTimer10Second = false
+                timer.setImageResource(R.drawable.ic_timer_off_white_24dp)
+            }
+            R.id.txt3second -> {
+                viewTimer.visibility = View.GONE
+                isTimerOff = false
+                isTimer5Second = true
+                isTimer10Second = false
+                timer.setImageResource(R.drawable.ic_replay_5_white_24dp)
+            }
+            R.id.txt10second -> {
+                viewTimer.visibility = View.GONE
+                isTimerOff = false
+                isTimer5Second = false
+                isTimer10Second = true
+                timer.setImageResource(R.drawable.ic_replay_10_white_24dp)
+            }
             R.id.timer -> {
-                val timer = MyCounter(4000, 1000)
-                timer.start()
+                viewTimer.visibility = View.VISIBLE
             }
         }
     }
 
     /**
-     * Starts a background thread and its [Handler].
+     * s a background thread and its [Handler].
      */
     private fun startBackgroundThread() {
         backgroundThread = HandlerThread("CameraBackground")
@@ -567,7 +621,8 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
                             videoButton.setImageResource(R.drawable.ic_stop_recording)
                             isRecordingVideo = true
                             mediaRecorder?.start()
-                            Snackbar.make(textureView,"Recording Start", Snackbar.LENGTH_LONG).show()
+                            Snackbar.make(textureView, "Recording Start", Snackbar.LENGTH_LONG)
+                                .show()
                         }
                     }
 
@@ -593,7 +648,7 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
         isRecordingVideo = false
         videoButton.setImageResource(R.drawable.ic_start_recording)
         mediaRecorder?.apply {
-            Snackbar.make(textureView,"Strop Recording", Snackbar.LENGTH_LONG).show()
+            Snackbar.make(textureView, "Strop Recording", Snackbar.LENGTH_LONG).show()
             stop()
             reset()
         }
@@ -819,13 +874,21 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
         fun newInstance(): Camera2VideoFragment = Camera2VideoFragment()
     }
 
+    //private fun setCountDownAnimation(txtViewCounter:TextView){
+//    val fadeOut = AlphaAnimation(1f, 0f)
+//    fadeOut.interpolator = AccelerateInterpolator()
+//    fadeOut.duration = 1000
+//
+//    val animation = AnimationSet(false)
+//    animation.addAnimation(fadeOut)
+//    view?.startAnimation(animation)
+//}
     inner class MyCounter(millisInFuture: Long, countDownInterval: Long) :
 
         CountDownTimer(millisInFuture, countDownInterval) {
-    var count=3
         override fun onFinish() {
             cancel()
-           // startRecordingVideo()
+             startRecordingVideo()
             txtViewCounter.setText("")
         }
 
@@ -835,16 +898,25 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
             fadeOut.interpolator = AccelerateInterpolator()
             fadeOut.duration = 1000
 
-            val scaleAnimation= ScaleAnimation(1.0f, 0.0f, 1.0f, 0.0f, Animation.RELATIVE_TO_SELF, 0.5f,Animation.RELATIVE_TO_SELF, 0.5f)
-            scaleAnimation.repeatCount=1
-            scaleAnimation.duration=1000
+            val scaleAnimation = ScaleAnimation(
+                1.0f,
+                0.0f,
+                1.0f,
+                0.0f,
+                Animation.RELATIVE_TO_SELF,
+                0.5f,
+                Animation.RELATIVE_TO_SELF,
+                0.5f
+            )
+            scaleAnimation.repeatCount = 1
+            scaleAnimation.duration = 1000
 
             val animation = AnimationSet(false)
             animation.addAnimation(fadeOut)
             animation.addAnimation(scaleAnimation)
-            if(count!=0){
+            if (count != 0) {
                 txtViewCounter.setText(count.toString())
-            }else{
+            } else {
                 txtViewCounter.setText("")
             }
             txtViewCounter.startAnimation(animation)

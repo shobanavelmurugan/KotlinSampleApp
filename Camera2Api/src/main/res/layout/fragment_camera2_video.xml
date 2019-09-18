@@ -57,6 +57,50 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/viewTimer"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:background="#66000000"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/timer">
+
+    <TextView
+        android:id="@+id/txtOff"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#fff"
+        android:text="off"
+        app:layout_constraintBottom_toBottomOf="@+id/viewTimer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/txt3second"
+        app:layout_constraintTop_toTopOf="@+id/viewTimer" />
+
+    <TextView
+        android:id="@+id/txt3second"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="5s"
+        android:textColor="#fff"
+        app:layout_constraintEnd_toStartOf="@+id/txt10second"
+        app:layout_constraintStart_toEndOf="@id/txtOff"
+        app:layout_constraintBottom_toBottomOf="@+id/viewTimer"
+        app:layout_constraintTop_toTopOf="@+id/viewTimer" />
+
+    <TextView
+        android:id="@+id/txt10second"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="10s"
+        android:textColor="#fff"
+        app:layout_constraintBottom_toBottomOf="@+id/viewTimer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/txt3second"
+        app:layout_constraintTop_toTopOf="@+id/viewTimer" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+
     <TextView
         android:id="@+id/txtViewVideo"
         android:layout_width="wrap_content"
