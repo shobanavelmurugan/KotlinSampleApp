@@ -23,7 +23,7 @@ import android.util.Log
 import android.util.Size
 import android.util.SparseIntArray
 import android.view.*
-import android.view.animation.AccelerateInterpolator
+import android.view.animation.*
 import android.widget.ImageView
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
@@ -247,7 +247,7 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
             R.id.flash -> handleFlash()
             R.id.switch_camera -> switchCamera()
             R.id.timer -> {
-                val timer = MyCounter(3000, 1000)
+                val timer = MyCounter(4000, 1000)
                 timer.start()
             }
         }
@@ -818,42 +818,37 @@ class Camera2VideoFragment : Fragment(), View.OnClickListener,
     companion object {
         fun newInstance(): Camera2VideoFragment = Camera2VideoFragment()
     }
-//private fun setCountDownAnimation(txtViewCounter:TextView){
-//    val fadeOut = AlphaAnimation(1f, 0f)
-//    fadeOut.interpolator = AccelerateInterpolator()
-//    fadeOut.duration = 1000
-//
-//    val animation = AnimationSet(false)
-//    animation.addAnimation(fadeOut)
-//    view?.startAnimation(animation)
-//}
-    inner class MyCounter(millisInFuture: Long, countDownInterval: Long) :
-        CountDownTimer(millisInFuture, countDownInterval) {
 
+    inner class MyCounter(millisInFuture: Long, countDownInterval: Long) :
+
+        CountDownTimer(millisInFuture, countDownInterval) {
+    var count=3
         override fun onFinish() {
             cancel()
-            startRecordingVideo()
+           // startRecordingVideo()
             txtViewCounter.setText("")
         }
 
         override fun onTick(millisUntilFinished: Long) {
             txtViewCounter.textSize = 150f
-            txtViewCounter.animate().alpha(1.0f).setDuration(1000).setInterpolator(AccelerateInterpolator()).start()
+            val fadeOut = AlphaAnimation(1f, 0f)
+            fadeOut.interpolator = AccelerateInterpolator()
+            fadeOut.duration = 1000
 
-//            val alphaAnimation: Animation=ScaleAnimation(activity,1.0f,0.0f,1.0f)
-//            alphaAnimation : Animation = ScaleAnimation()
-//            // Use a set of animations
-//            Animation scaleAnimation = new ScaleAnimation(1.0f, 0.0f, 1.0f,
-//                0.0f, Animation.RELATIVE_TO_SELF, 0.5f,
-//                Animation.RELATIVE_TO_SELF, 0.5f);
-//            Animation alphaAnimation = new AlphaAnimation(1.0f, 0.0f);
-//            AnimationSet animationSet = new AnimationSet(false);
-//            animationSet.addAnimation(scaleAnimation);
-//            animationSet.addAnimation(alphaAnimation);
-//            countDownAnimation.setAnimation(animationSet);
+            val scaleAnimation= ScaleAnimation(1.0f, 0.0f, 1.0f, 0.0f, Animation.RELATIVE_TO_SELF, 0.5f,Animation.RELATIVE_TO_SELF, 0.5f)
+            scaleAnimation.repeatCount=1
+            scaleAnimation.duration=1000
 
-            txtViewCounter.text = (millisUntilFinished / 1000).toString() + ""
-            println("Timer  : " + millisUntilFinished / 1000)
+            val animation = AnimationSet(false)
+            animation.addAnimation(fadeOut)
+            animation.addAnimation(scaleAnimation)
+            if(count!=0){
+                txtViewCounter.setText(count.toString())
+            }else{
+                txtViewCounter.setText("")
+            }
+            txtViewCounter.startAnimation(animation)
+            count--
         }
     }
 }
